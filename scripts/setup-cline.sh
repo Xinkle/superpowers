@@ -25,7 +25,17 @@ if [ "$INSTALL_GLOBAL" = true ]; then
     echo -e "${BLUE}[Superpowers for Cline]${NC} Initializing GLOBAL installation..."
     CLINE_DIR="$HOME/.cline"
     SKILLS_DIR="$CLINE_DIR/skills"
-    echo -e "${BLUE}Global Folder:${NC} $CLINE_DIR"
+    
+    # Detect Custom Global Rules Directory
+    CUSTOM_RULES_DIR="$HOME/Documents/Cline/Rules"
+    GLOBAL_RULES_DEST="$CLINE_DIR/superpowers-rules.md"
+    
+    if [ -d "$CUSTOM_RULES_DIR" ]; then
+        GLOBAL_RULES_DEST="$CUSTOM_RULES_DIR/superpowers-rules.md"
+        echo -e "${BLUE}Custom Rules Dir detected:${NC} $CUSTOM_RULES_DIR"
+    fi
+    
+    echo -e "${BLUE}Global Skills Folder:${NC} $SKILLS_DIR"
 else
     # Improved Root Detection: Try to find the nearest project root (.git or package.json)
     echo -e "${BLUE}[Superpowers for Cline]${NC} Initializing LOCAL installation..."
@@ -86,21 +96,19 @@ setup_rules_file() {
 }
 
 if [ "$INSTALL_GLOBAL" = true ]; then
-    # In global mode, also save a copy of the rules for easy reference in ~/.cline
-    cp "$TEMPLATE_FILE" "$CLINE_DIR/superpowers-rules.md"
-    echo -e "${BLUE}Rules template saved to:${NC} $CLINE_DIR/superpowers-rules.md"
+    # Save a copy of the rules to the detected global destination
+    cp "$TEMPLATE_FILE" "$GLOBAL_RULES_DEST"
+    echo -e "${BLUE}Rules saved to:${NC} ${GREEN}$GLOBAL_RULES_DEST${NC}"
     
-    # If the user is currently in a project, offer to create a local .clinerules as well
+    # If the user is currently in a project, also create a local .clinerules
     if [[ "$TARGET_DIR" != "$SUPERPOWERS_DIR" && "$TARGET_DIR" != "$HOME" ]]; then
         setup_rules_file "$TARGET_DIR/.clinerules"
     fi
 
-    echo -e "\n${YELLOW}[How to apply Global Rules in Cline]${NC}"
-    echo -e "  1. Open VSCode Settings."
-    echo -e "  2. Search for ${BLUE}'Cline: Custom Instructions'${NC}."
-    echo -e "  3. Copy and paste the content of:"
-    echo -e "     ${GREEN}$CLINE_DIR/superpowers-rules.md${NC}"
-    echo -e "  4. This enables Superpowers for ALL projects globally."
+    echo -e "\n${YELLOW}[Global Rules Applied]${NC}"
+    echo -e "  Rules have been placed in: ${BLUE}$GLOBAL_RULES_DEST${NC}"
+    echo -e "  If Cline is configured to monitor this directory, it should be active."
+    echo -e "  Otherwise, copy the content into: ${BLUE}Cline Settings -> Custom Instructions${NC}"
 else
     setup_rules_file "$TARGET_DIR/.clinerules"
 fi
