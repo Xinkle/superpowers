@@ -65,31 +65,44 @@ for skill_path in "$SUPERPOWERS_DIR/skills"/*; do
     fi
 done
 
-# 4. Set up rules (Only for Local install, or guide for global rules)
-if [ "$INSTALL_GLOBAL" = false ]; then
-    CLINERULES_FILE="$TARGET_DIR/.clinerules"
-    TEMPLATE_FILE="$SUPERPOWERS_DIR/.cline/clinerules-template.md"
+# 4. Set up rules
+TEMPLATE_FILE="$SUPERPOWERS_DIR/.cline/clinerules-template.md"
 
-    if [ -f "$TEMPLATE_FILE" ]; then
-        echo -e "${BLUE}Injecting .clinerules...${NC}"
-        if [ -f "$CLINERULES_FILE" ]; then
-            if grep -q "Superpowers for Cline" "$CLINERULES_FILE"; then
-                echo -e "${YELLOW}  - .clinerules already contains Superpowers instructions. Skipping append.${NC}"
-            else
-                echo -e "\n\n" >> "$CLINERULES_FILE"
-                cat "$TEMPLATE_FILE" >> "$CLINERULES_FILE"
-                echo -e "  - Appended Superpowers to existing ${GREEN}.clinerules${NC}"
-            fi
+setup_rules_file() {
+    local target_path="$1"
+    echo -e "${BLUE}Injecting rules into $target_path...${NC}"
+    if [ -f "$target_path" ]; then
+        if grep -q "Superpowers for Cline" "$target_path"; then
+            echo -e "${YELLOW}  - Already contains Superpowers instructions. Skipping.${NC}"
         else
-            cp "$TEMPLATE_FILE" "$CLINERULES_FILE"
-            echo -e "  - Created new ${GREEN}.clinerules${NC}"
+            echo -e "\n\n" >> "$target_path"
+            cat "$TEMPLATE_FILE" >> "$target_path"
+            echo -e "  - Appended Superpowers to ${GREEN}$(basename "$target_path")${NC}"
         fi
+    else
+        cp "$TEMPLATE_FILE" "$target_path"
+        echo -e "  - Created new ${GREEN}$(basename "$target_path")${NC}"
     fi
+}
+
+if [ "$INSTALL_GLOBAL" = true ]; then
+    # In global mode, also save a copy of the rules for easy reference in ~/.cline
+    cp "$TEMPLATE_FILE" "$CLINE_DIR/superpowers-rules.md"
+    echo -e "${BLUE}Rules template saved to:${NC} $CLINE_DIR/superpowers-rules.md"
+    
+    # If the user is currently in a project, offer to create a local .clinerules as well
+    if [[ "$TARGET_DIR" != "$SUPERPOWERS_DIR" && "$TARGET_DIR" != "$HOME" ]]; then
+        setup_rules_file "$TARGET_DIR/.clinerules"
+    fi
+
+    echo -e "\n${YELLOW}[How to apply Global Rules in Cline]${NC}"
+    echo -e "  1. Open VSCode Settings."
+    echo -e "  2. Search for ${BLUE}'Cline: Custom Instructions'${NC}."
+    echo -e "  3. Copy and paste the content of:"
+    echo -e "     ${GREEN}$CLINE_DIR/superpowers-rules.md${NC}"
+    echo -e "  4. This enables Superpowers for ALL projects globally."
 else
-    echo -e "\n${YELLOW}[Global Rule Tip]${NC}"
-    echo -e "  To apply Superpowers globally, copy the content of:"
-    echo -e "  ${BLUE}$SUPERPOWERS_DIR/.cline/clinerules-template.md${NC}"
-    echo -e "  into your Cline's ${BLUE}Custom Instructions${NC} in Settings."
+    setup_rules_file "$TARGET_DIR/.clinerules"
 fi
 
 echo -e "\n${GREEN}[Success]${NC} Superpowers have been successfully ported to Cline!"
